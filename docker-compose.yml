@@ -30,6 +30,7 @@ services:
     dns_search: .
     environment:
       - VIRTUAL_HOST=${ST2_URL}
+      - VIRTUAL_PROTO=https
       - VIRTUAL_PORT=443
       - LETSENCRYPT_HOST=${ST2_URL}
       - LETSENCRYPT_EMAIL=${ST2_ADMIN_EMAIL}
