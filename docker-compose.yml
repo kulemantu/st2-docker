@@ -2,6 +2,7 @@ version: '3'
 
 services:
   stackstorm:
+    container_name: stackstorm-server
     image: stackstorm/stackstorm:${ST2_IMAGE_TAG:-latest}
     env_file:
       - conf/stackstorm.env
@@ -9,8 +10,6 @@ services:
       - conf/rabbitmq.env
       - conf/postgres.env
       - conf/redis.env
-    ports:
-      - "443:443"
     depends_on:
       - mongo
       - postgres
@@ -24,15 +23,21 @@ services:
       - stackstorm-virtualenvs-volume:/opt/stackstorm/virtualenvs
       - stackstorm-configs-volume:/opt/stackstorm/configs
       - stackstorm-log-volume:/var/log
-      - ./packs.dev:/opt/stackstorm/packs.dev
-      - ./runtime/entrypoint.d:/st2-docker/entrypoint.d
-      - ./runtime/st2.d:/st2-docker/st2.d
-      - ./conf/stackstorm.env:/st2-docker/env
+      - /opt/sw-docker/stackstorm/packs.dev:/opt/stackstorm/packs.dev
+      - /opt/sw-docker/stackstorm/runtime/entrypoint.d:/st2-docker/entrypoint.d
+      - /opt/sw-docker/stackstorm/runtime/st2.d:/st2-docker/st2.d
+      - /opt/sw-docker/stackstorm/conf/stackstorm.env:/st2-docker/env
     dns_search: .
+    environment:
+      - VIRTUAL_HOST=${ST2_URL}
+      - VIRTUAL_PORT=443
+      - LETSENCRYPT_HOST=${ST2_URL}
+      - LETSENCRYPT_EMAIL=${ST2_ADMIN_EMAIL}
 
 ### External Services
 
   mongo:
+    container_name: stackstorm-mongo
     image: mongo:3.4
     env_file:
       - conf/mongo.env
@@ -42,7 +47,9 @@ services:
       - mongo-volume:/data/db
       - mongo-configdb-volume:/data/configdb
     dns_search: .
+
   rabbitmq:
+    container_name: stackstorm-rabbitmq
     image: rabbitmq:3.6-management
     env_file:
       - conf/rabbitmq.env
@@ -51,7 +58,9 @@ services:
     volumes:
       - rabbitmq-volume:/var/lib/rabbitmq
     dns_search: .
+
   postgres:
+    container_name: stackstorm-postgres
     image: postgres:9.6
     env_file:
       - conf/postgres.env
@@ -60,7 +69,9 @@ services:
     volumes:
       - postgres-volume:/var/lib/postgresql/data
     dns_search: .
+
   redis:
+    container_name: stackstorm-redis
     image: redis:4.0
     env_file:
       - conf/redis.env
@@ -90,6 +101,7 @@ volumes:
 
 networks:
   public:
-    driver: bridge
+    external:
+      name: nginx-proxy
   private:
     driver: bridge
